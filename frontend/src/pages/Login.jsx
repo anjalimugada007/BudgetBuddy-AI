@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+const API = import.meta.env.VITE_API_URL;
+
 function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -8,24 +10,20 @@ function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/token/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username: username,
-            password: password,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/token/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Save JWT tokens
         localStorage.setItem("access_token", data.access);
         localStorage.setItem("refresh_token", data.refresh);
 
@@ -34,7 +32,6 @@ function Login() {
 
         alert("Login successful!");
 
-        // Go to Dashboard
         window.location.href = "/dashboard";
       } else {
         console.log("Login error:", data);

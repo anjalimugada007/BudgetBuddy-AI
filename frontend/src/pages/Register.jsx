@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000/api";
+const API = import.meta.env.VITE_API_URL;
 
 function Register() {
   const navigate = useNavigate();
@@ -93,7 +93,6 @@ function Register() {
 
   return (
     <div style={styles.page}>
-
       <div style={styles.card}>
 
         {/* Logo */}
@@ -264,7 +263,6 @@ function Register() {
     </div>
   );
 }
-
 
 /* =====================================================
    STYLES

@@ -17,10 +17,35 @@ from .models import (
 # =========================
 
 class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        source='user.username',
+        read_only=True
+    )
+
+    email = serializers.EmailField(
+        source='user.email',
+        read_only=True
+    )
+
     class Meta:
         model = Profile
-        fields = '__all__'
-        read_only_fields = ['user']
+        fields = [
+            'id',
+            'username',
+            'email',
+            'phone',
+            'date_of_birth',
+            'bio',
+            'role',
+            'user',
+        ]
+        read_only_fields = [
+            'id',
+            'username',
+            'email',
+            'role',
+            'user',
+        ]
 
 
 # =========================
@@ -83,7 +108,6 @@ class SavingsGoalSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['user', 'status']
 
-    # Target amount validation
     def validate_target_amount(self, value):
 
         if value <= 0:
@@ -93,7 +117,6 @@ class SavingsGoalSerializer(serializers.ModelSerializer):
 
         return value
 
-    # Current amount validation
     def validate_current_amount(self, value):
 
         if value < 0:
@@ -101,7 +124,6 @@ class SavingsGoalSerializer(serializers.ModelSerializer):
                 "Current amount cannot be negative."
             )
 
-        # During UPDATE/PATCH, compare with existing target
         if self.instance:
 
             if value > self.instance.target_amount:
@@ -110,8 +132,6 @@ class SavingsGoalSerializer(serializers.ModelSerializer):
                 )
 
         return value
-
-
 
 
 # =========================

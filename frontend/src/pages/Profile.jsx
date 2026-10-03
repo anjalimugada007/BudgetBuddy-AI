@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_URL;
+
 function Profile() {
   const navigate = useNavigate();
 
@@ -39,7 +41,7 @@ function Profile() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/profile/",
+        `${API}/profile/`,
         {
           method: "GET",
           headers: {
@@ -94,7 +96,7 @@ function Profile() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/profile/",
+        `${API}/profile/`,
         {
           method: "PUT",
           headers: {
@@ -143,87 +145,79 @@ function Profile() {
   // CHANGE PASSWORD
   // =====================================================
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
+ const handleChangePassword = async (e) => {
+  e.preventDefault();
 
-    setPasswordMessage("");
-    setPasswordError("");
+  setPasswordMessage("");
+  setPasswordError("");
 
-    if (
-      !currentPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) {
-      setPasswordError(
-        "Please fill all password fields."
-      );
-      return;
-    }
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    setPasswordError("Please fill all password fields.");
+    return;
+  }
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError(
-        "New passwords do not match."
-      );
-      return;
-    }
+  if (newPassword !== confirmPassword) {
+    setPasswordError("New passwords do not match.");
+    return;
+  }
 
-    if (newPassword.length < 8) {
-      setPasswordError(
-        "New password must be at least 8 characters."
-      );
-      return;
-    }
+  if (newPassword.length < 8) {
+    setPasswordError(
+      "New password must be at least 8 characters."
+    );
+    return;
+  }
 
-    const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("access_token");
 
-    try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/change-password/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            current_password: currentPassword,
-            new_password: newPassword,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.status === 401) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-
-        navigate("/login");
-        return;
+  try {
+    const response = await fetch(
+      `${API}/change-password/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          old_password: currentPassword,
+          new_password: newPassword,
+        }),
       }
+    );
 
-      if (!response.ok) {
-        setPasswordError(
-          data.error || "Unable to change password."
-        );
-        return;
-      }
+    const data = await response.json();
 
-      setPasswordMessage(
-        "Password changed successfully!"
-      );
+    if (response.status === 401) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
 
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error) {
-      console.error("Password error:", error);
-
-      setPasswordError(
-        "Unable to connect to the server."
-      );
+      navigate("/login");
+      return;
     }
-  };
+
+    if (!response.ok) {
+      setPasswordError(
+        data.message || "Unable to change password."
+      );
+      return;
+    }
+
+    setPasswordMessage(
+      "Password changed successfully!"
+    );
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  } catch (error) {
+    console.error("Password error:", error);
+
+    setPasswordError(
+      "Unable to connect to the server."
+    );
+  }
+};
 
   // =====================================================
   // LOGOUT

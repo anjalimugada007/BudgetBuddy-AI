@@ -126,19 +126,44 @@ class ProfileView(APIView):
             user=request.user
         )
 
+        email = request.data.get("email")
+
+        if email is not None:
+            email = email.strip()
+
+            if not email:
+                return Response(
+                    {
+                        "error": "Email is required."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if "@" not in email:
+                return Response(
+                    {
+                        "error": "Please enter a valid email address."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            request.user.email = email
+            request.user.save(update_fields=["email"])
+
+        profile_data = request.data.copy()
+        profile_data.pop("email", None)
+
         serializer = ProfileSerializer(
             profile,
-            data=request.data,
+            data=profile_data,
             partial=True
         )
 
         if serializer.is_valid():
-            serializer.save(
-                user=request.user
-            )
+            serializer.save(user=request.user)
 
             return Response(
-                serializer.data,
+                ProfileSerializer(profile).data,
                 status=status.HTTP_200_OK
             )
 
@@ -146,7 +171,6 @@ class ProfileView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
-
 
 class MyProfileView(ProfileView):
     pass

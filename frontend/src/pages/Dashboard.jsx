@@ -19,14 +19,10 @@ import {
 
 import "./Dashboard.css";
 
-const API = "http://127.0.0.1:8000/api";
+const API = import.meta.env.VITE_API_URL;
 
 function Dashboard() {
   const navigate = useNavigate();
-
-  // =========================
-  // DATA STATES
-  // =========================
 
   const [expenses, setExpenses] = useState([]);
   const [income, setIncome] = useState([]);
@@ -34,16 +30,11 @@ function Dashboard() {
   const [savingsGoals, setSavingsGoals] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
-  // Analytics API state
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsError, setAnalyticsError] = useState("");
 
   const [loading, setLoading] = useState(true);
-
-  // =========================
-  // FORM STATES
-  // =========================
 
   const [expenseForm, setExpenseForm] = useState({
     category: "",
@@ -73,10 +64,6 @@ function Dashboard() {
     target_date: "",
   });
 
-  // =========================
-  // AUTH
-  // =========================
-
   const getToken = () => {
     return localStorage.getItem("access_token");
   };
@@ -91,10 +78,6 @@ function Dashboard() {
     localStorage.removeItem("refresh_token");
     navigate("/login");
   };
-
-  // =========================
-  // LOAD ALL DASHBOARD DATA
-  // =========================
 
   const loadDashboardData = async () => {
     const token = getToken();
@@ -128,10 +111,6 @@ function Dashboard() {
         fetch(`${API}/analytics/`, { headers }),
       ]);
 
-      // =========================
-      // AUTHENTICATION CHECK
-      // =========================
-
       if (
         expensesResponse.status === 401 ||
         incomeResponse.status === 401 ||
@@ -145,84 +124,41 @@ function Dashboard() {
         return;
       }
 
-      // =========================
-      // READ NORMAL DASHBOARD DATA
-      // =========================
-
       const expensesData = await expensesResponse.json();
       const incomeData = await incomeResponse.json();
       const budgetsData = await budgetsResponse.json();
       const savingsData = await savingsResponse.json();
-      const notificationsData =
-        await notificationsResponse.json();
+      const notificationsData = await notificationsResponse.json();
 
-      setExpenses(
-        Array.isArray(expensesData)
-          ? expensesData
-          : []
-      );
-
-      setIncome(
-        Array.isArray(incomeData)
-          ? incomeData
-          : []
-      );
-
-      setBudgets(
-        Array.isArray(budgetsData)
-          ? budgetsData
-          : []
-      );
-
-      setSavingsGoals(
-        Array.isArray(savingsData)
-          ? savingsData
-          : []
-      );
-
+      setExpenses(Array.isArray(expensesData) ? expensesData : []);
+      setIncome(Array.isArray(incomeData) ? incomeData : []);
+      setBudgets(Array.isArray(budgetsData) ? budgetsData : []);
+      setSavingsGoals(Array.isArray(savingsData) ? savingsData : []);
       setNotifications(
         Array.isArray(notificationsData)
           ? notificationsData
           : []
       );
 
-      // =========================
-      // READ ANALYTICS API DATA
-      // =========================
-
       if (!analyticsResponse.ok) {
-        const errorData =
-          await analyticsResponse
-            .json()
-            .catch(() => ({}));
+        const errorData = await analyticsResponse
+          .json()
+          .catch(() => ({}));
 
-        console.error(
-          "Analytics API error:",
-          errorData
-        );
+        console.error("Analytics API error:", errorData);
 
-        setAnalyticsError(
-          "Unable to load analytics data."
-        );
-
+        setAnalyticsError("Unable to load analytics data.");
         setAnalyticsData(null);
       } else {
-        const analyticsResult =
-          await analyticsResponse.json();
+        const analyticsResult = await analyticsResponse.json();
 
-        console.log(
-          "Analytics API response:",
-          analyticsResult
-        );
+        console.log("Analytics API response:", analyticsResult);
 
         setAnalyticsData(analyticsResult);
         setAnalyticsError("");
       }
     } catch (error) {
-      console.error(
-        "Dashboard loading error:",
-        error
-      );
+      console.error("Dashboard loading error:", error);
 
       setAnalyticsError(
         "Unable to connect to the analytics service."
@@ -238,10 +174,6 @@ function Dashboard() {
   useEffect(() => {
     loadDashboardData();
   }, []);
-
-  // =========================
-  // NOTIFICATION - MARK AS READ
-  // =========================
 
   const handleMarkNotificationRead = async (id) => {
     try {
@@ -259,48 +191,31 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
-        alert(
-          "Could not mark notification as read."
-        );
-
+        console.error(await response.json());
+        alert("Could not mark notification as read.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Notification read error:",
-        error
-      );
+      console.error("Notification read error:", error);
     }
   };
-
-  // =========================
-  // EXPENSE - ADD
-  // =========================
 
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch(
-        `${API}/expenses/`,
-        {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            category: expenseForm.category,
-            amount: Number(expenseForm.amount),
-            date: expenseForm.date,
-            description:
-              expenseForm.description,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/expenses/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          category: expenseForm.category,
+          amount: Number(expenseForm.amount),
+          date: expenseForm.date,
+          description: expenseForm.description,
+        }),
+      });
 
       if (response.status === 401) {
         handleLogout();
@@ -308,13 +223,9 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        const errorData =
-          await response.json();
+        const errorData = await response.json();
 
-        console.error(
-          "Expense error:",
-          errorData
-        );
+        console.error("Expense error:", errorData);
 
         alert("Could not add expense.");
         return;
@@ -329,22 +240,12 @@ function Dashboard() {
 
       await loadDashboardData();
 
-      alert(
-        "Expense added successfully!"
-      );
+      alert("Expense added successfully!");
     } catch (error) {
-      console.error(
-        "Error adding expense:",
-        error
-      );
-
+      console.error("Error adding expense:", error);
       alert("Could not add expense.");
     }
   };
-
-  // =========================
-  // EXPENSE - EDIT
-  // =========================
 
   const handleEditExpense = async (expense) => {
     const category = window.prompt(
@@ -396,33 +297,19 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
+        console.error(await response.json());
         alert("Could not edit expense.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Edit expense error:",
-        error
-      );
+      console.error("Edit expense error:", error);
     }
   };
 
-  // =========================
-  // EXPENSE - DELETE
-  // =========================
-
   const handleDeleteExpense = async (id) => {
-    if (
-      !window.confirm(
-        "Delete this expense?"
-      )
-    ) {
+    if (!window.confirm("Delete this expense?")) {
       return;
     }
 
@@ -441,43 +328,30 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        alert(
-          "Could not delete expense."
-        );
+        alert("Could not delete expense.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Delete expense error:",
-        error
-      );
+      console.error("Delete expense error:", error);
     }
   };
-
-  // =========================
-  // INCOME - ADD
-  // =========================
 
   const handleIncomeSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch(
-        `${API}/income/`,
-        {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            source: incomeForm.source,
-            amount: Number(incomeForm.amount),
-            date: incomeForm.date,
-            description:
-              incomeForm.description,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/income/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          source: incomeForm.source,
+          amount: Number(incomeForm.amount),
+          date: incomeForm.date,
+          description: incomeForm.description,
+        }),
+      });
 
       if (response.status === 401) {
         handleLogout();
@@ -485,10 +359,7 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
+        console.error(await response.json());
         alert("Could not add income.");
         return;
       }
@@ -502,16 +373,9 @@ function Dashboard() {
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Add income error:",
-        error
-      );
+      console.error("Add income error:", error);
     }
   };
-
-  // =========================
-  // INCOME - EDIT
-  // =========================
 
   const handleEditIncome = async (item) => {
     const source = window.prompt(
@@ -563,33 +427,19 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
+        console.error(await response.json());
         alert("Could not edit income.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Edit income error:",
-        error
-      );
+      console.error("Edit income error:", error);
     }
   };
 
-  // =========================
-  // INCOME - DELETE
-  // =========================
-
   const handleDeleteIncome = async (id) => {
-    if (
-      !window.confirm(
-        "Delete this income?"
-      )
-    ) {
+    if (!window.confirm("Delete this income?")) {
       return;
     }
 
@@ -608,46 +458,30 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        alert(
-          "Could not delete income."
-        );
+        alert("Could not delete income.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Delete income error:",
-        error
-      );
+      console.error("Delete income error:", error);
     }
   };
-
-  // =========================
-  // BUDGET - ADD
-  // =========================
 
   const handleBudgetSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch(
-        `${API}/budgets/`,
-        {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({
-            category: budgetForm.category,
-            amount: Number(
-              budgetForm.amount
-            ),
-            start_date:
-              budgetForm.start_date,
-            end_date:
-              budgetForm.end_date,
-          }),
-        }
-      );
+      const response = await fetch(`${API}/budgets/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          category: budgetForm.category,
+          amount: Number(budgetForm.amount),
+          start_date: budgetForm.start_date,
+          end_date: budgetForm.end_date,
+        }),
+      });
 
       if (response.status === 401) {
         handleLogout();
@@ -655,10 +489,7 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
+        console.error(await response.json());
         alert("Could not add budget.");
         return;
       }
@@ -672,16 +503,9 @@ function Dashboard() {
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Add budget error:",
-        error
-      );
+      console.error("Add budget error:", error);
     }
   };
-
-  // =========================
-  // BUDGET - EDIT
-  // =========================
 
   const handleEditBudget = async (budget) => {
     const category = window.prompt(
@@ -733,33 +557,19 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
+        console.error(await response.json());
         alert("Could not edit budget.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Edit budget error:",
-        error
-      );
+      console.error("Edit budget error:", error);
     }
   };
 
-  // =========================
-  // BUDGET - DELETE
-  // =========================
-
   const handleDeleteBudget = async (id) => {
-    if (
-      !window.confirm(
-        "Delete this budget?"
-      )
-    ) {
+    if (!window.confirm("Delete this budget?")) {
       return;
     }
 
@@ -778,24 +588,15 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        alert(
-          "Could not delete budget."
-        );
+        alert("Could not delete budget.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Delete budget error:",
-        error
-      );
+      console.error("Delete budget error:", error);
     }
   };
-
-  // =========================
-  // SAVINGS - ADD
-  // =========================
 
   const handleSavingsSubmit = async (e) => {
     e.preventDefault();
@@ -814,8 +615,7 @@ function Dashboard() {
             current_amount: Number(
               savingsForm.current_amount
             ),
-            target_date:
-              savingsForm.target_date,
+            target_date: savingsForm.target_date,
           }),
         }
       );
@@ -826,14 +626,8 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
-        alert(
-          "Could not add savings goal."
-        );
-
+        console.error(await response.json());
+        alert("Could not add savings goal.");
         return;
       }
 
@@ -846,20 +640,11 @@ function Dashboard() {
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Add savings error:",
-        error
-      );
+      console.error("Add savings error:", error);
     }
   };
 
-  // =========================
-  // SAVINGS - EDIT
-  // =========================
-
-  const handleEditSavingsGoal = async (
-    goal
-  ) => {
+  const handleEditSavingsGoal = async (goal) => {
     const name = window.prompt(
       "Enter savings goal name:",
       goal.name
@@ -896,12 +681,8 @@ function Dashboard() {
           headers: authHeaders(),
           body: JSON.stringify({
             name,
-            target_amount: Number(
-              target_amount
-            ),
-            current_amount: Number(
-              current_amount
-            ),
+            target_amount: Number(target_amount),
+            current_amount: Number(current_amount),
             target_date,
           }),
         }
@@ -913,38 +694,19 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        console.error(
-          await response.json()
-        );
-
-        alert(
-          "Could not edit savings goal."
-        );
-
+        console.error(await response.json());
+        alert("Could not edit savings goal.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Edit savings error:",
-        error
-      );
+      console.error("Edit savings error:", error);
     }
   };
 
-  // =========================
-  // SAVINGS - DELETE
-  // =========================
-
-  const handleDeleteSavingsGoal = async (
-    id
-  ) => {
-    if (
-      !window.confirm(
-        "Delete this savings goal?"
-      )
-    ) {
+  const handleDeleteSavingsGoal = async (id) => {
+    if (!window.confirm("Delete this savings goal?")) {
       return;
     }
 
@@ -963,36 +725,21 @@ function Dashboard() {
       }
 
       if (!response.ok) {
-        alert(
-          "Could not delete savings goal."
-        );
-
+        alert("Could not delete savings goal.");
         return;
       }
 
       await loadDashboardData();
     } catch (error) {
-      console.error(
-        "Delete savings error:",
-        error
-      );
+      console.error("Delete savings error:", error);
     }
   };
 
-  // =========================
-  // NORMAL DASHBOARD CALCULATIONS
-  // =========================
-
   const totalBudget = budgets.reduce(
     (total, item) =>
-      total +
-      Number(item.amount || 0),
+      total + Number(item.amount || 0),
     0
   );
-
-  // =========================
-  // ANALYTICS DATA
-  // =========================
 
   const analyticsIncome = Number(
     analyticsData?.summary?.total_income || 0
@@ -1006,56 +753,34 @@ function Dashboard() {
     analyticsData?.summary?.balance || 0
   );
 
-  // =========================
-  // CATEGORY-WISE EXPENSE DATA
-  // =========================
+  const categoryWiseExpenses = Array.isArray(
+    analyticsData?.category_wise_expenses
+  )
+    ? analyticsData.category_wise_expenses
+    : [];
 
-  const categoryWiseExpenses =
-    Array.isArray(
-      analyticsData?.category_wise_expenses
+  const expenseCategoryData = categoryWiseExpenses
+    .filter(
+      (item) => Number(item.amount || 0) > 0
     )
-      ? analyticsData.category_wise_expenses
-      : [];
-
-  const expenseCategoryData =
-    categoryWiseExpenses
-      .filter(
-        (item) =>
-          Number(item.amount || 0) > 0
-      )
-      .map((item) => ({
-        name:
-          item.category || "Other",
-        value: Number(
-          item.amount || 0
-        ),
-      }));
-
-  // =========================
-  // MONTHLY TREND DATA
-  // =========================
-
-  const monthlyTrends =
-    Array.isArray(
-      analyticsData?.monthly_trends
-    )
-      ? analyticsData.monthly_trends
-      : [];
-
-  const monthlyTrendData =
-    monthlyTrends.map((item) => ({
-      month: item.month || "",
-      Income: Number(
-        item.income || 0
-      ),
-      Expenses: Number(
-        item.expense || 0
-      ),
+    .map((item) => ({
+      name: item.category || "Other",
+      value: Number(item.amount || 0),
     }));
 
-  // =========================
-  // SAVINGS SUMMARY
-  // =========================
+  const monthlyTrends = Array.isArray(
+    analyticsData?.monthly_trends
+  )
+    ? analyticsData.monthly_trends
+    : [];
+
+  const monthlyTrendData = monthlyTrends.map(
+    (item) => ({
+      month: item.month || "",
+      Income: Number(item.income || 0),
+      Expenses: Number(item.expense || 0),
+    })
+  );
 
   const savingsSummary =
     analyticsData?.savings_summary || {};
@@ -1072,24 +797,14 @@ function Dashboard() {
     savingsSummary.remaining || 0
   );
 
-  const savingsCompletion =
-    Number(
-      savingsSummary.completion_percentage ||
-        0
-    );
+  const savingsCompletion = Number(
+    savingsSummary.completion_percentage || 0
+  );
 
-  const safeSavingsPercentage =
-    Math.min(
-      100,
-      Math.max(
-        0,
-        savingsCompletion
-      )
-    );
-
-  // =========================
-  // CHART COLORS
-  // =========================
+  const safeSavingsPercentage = Math.min(
+    100,
+    Math.max(0, savingsCompletion)
+  );
 
   const chartColors = [
     "#ef4444",
@@ -1100,33 +815,19 @@ function Dashboard() {
     "#ec4899",
   ];
 
-  // =========================
-  // INITIAL LOADING
-  // =========================
-
   if (loading) {
     return (
       <div className="dashboard">
         <div className="dashboard-container">
-          <h2>
-            Loading BudgetBuddy...
-          </h2>
+          <h2>Loading BudgetBuddy...</h2>
         </div>
       </div>
     );
   }
 
-  // =========================
-  // UI
-  // =========================
-
   return (
     <div className="dashboard">
       <div className="dashboard-container">
-
-        {/* =========================
-            NAVBAR
-        ========================= */}
 
         <nav className="dashboard-nav">
 
@@ -1136,18 +837,14 @@ function Dashboard() {
 
             <button
               type="button"
-              onClick={() =>
-                navigate("/profile")
-              }
+              onClick={() => navigate("/profile")}
             >
               👤 Profile
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                navigate("/reports")
-              }
+              onClick={() => navigate("/reports")}
             >
               📊 Reports
             </button>
@@ -1163,15 +860,9 @@ function Dashboard() {
 
         </nav>
 
-        {/* =========================
-            HEADER
-        ========================= */}
-
         <div className="dashboard-title">
 
-          <h1>
-            💰 BudgetBuddy Dashboard
-          </h1>
+          <h1>💰 BudgetBuddy Dashboard</h1>
 
           <p>
             Manage your income, expenses,
@@ -1180,123 +871,82 @@ function Dashboard() {
 
         </div>
 
-        {/* =====================================================
-            ANALYTICS DASHBOARD
-        ===================================================== */}
-
         <div className="analytics-dashboard">
 
-          <h2>
-            📊 Analytics Dashboard
-          </h2>
-
-          {/* ANALYTICS LOADING */}
+          <h2>📊 Analytics Dashboard</h2>
 
           {analyticsLoading && (
             <div className="section">
-              <p>
-                Loading analytics data...
-              </p>
+              <p>Loading analytics data...</p>
             </div>
           )}
 
-          {/* ANALYTICS ERROR */}
+          {!analyticsLoading && analyticsError && (
+            <div className="section">
 
-          {!analyticsLoading &&
-            analyticsError && (
-              <div className="section">
+              <p>❌ {analyticsError}</p>
 
-                <p>
-                  ❌ {analyticsError}
-                </p>
+              <button
+                type="button"
+                onClick={loadDashboardData}
+              >
+                🔄 Retry
+              </button>
 
-                <button
-                  type="button"
-                  onClick={
-                    loadDashboardData
-                  }
-                >
-                  🔄 Retry
-                </button>
-
-              </div>
-            )}
-
-          {/* ANALYTICS CONTENT */}
+            </div>
+          )}
 
           {!analyticsLoading &&
             !analyticsError &&
             analyticsData && (
               <>
 
-                {/* ==========================================
-                    1. FINANCIAL SUMMARY
-                ========================================== */}
-
                 <div className="section">
 
-                  <h2>
-                    💰 Financial Summary
-                  </h2>
+                  <h2>💰 Financial Summary</h2>
 
                   <div className="summary-grid">
 
                     <div className="summary-card">
 
-                      <h3>
-                        💵 Total Income
-                      </h3>
+                      <h3>💵 Total Income</h3>
 
                       <h2>
                         ₹
-                        {analyticsIncome.toFixed(
-                          2
-                        )}
+                        {analyticsIncome.toFixed(2)}
                       </h2>
 
                     </div>
 
                     <div className="summary-card">
 
-                      <h3>
-                        💸 Total Expenses
-                      </h3>
+                      <h3>💸 Total Expenses</h3>
 
                       <h2>
                         ₹
-                        {analyticsExpenses.toFixed(
-                          2
-                        )}
+                        {analyticsExpenses.toFixed(2)}
                       </h2>
 
                     </div>
 
                     <div className="summary-card">
 
-                      <h3>
-                        💰 Balance
-                      </h3>
+                      <h3>💰 Balance</h3>
 
                       <h2>
                         ₹
-                        {analyticsBalance.toFixed(
-                          2
-                        )}
+                        {analyticsBalance.toFixed(2)}
                       </h2>
 
                     </div>
 
                     <div className="summary-card">
 
-                      <h3>
-                        📊 Total Budget
-                      </h3>
+                      <h3>📊 Total Budget</h3>
 
                       <h2>
                         ₹
-                        {totalBudget.toFixed(
-                          2
-                        )}
+                        {totalBudget.toFixed(2)}
                       </h2>
 
                     </div>
@@ -1304,10 +954,6 @@ function Dashboard() {
                   </div>
 
                 </div>
-
-                {/* ==========================================
-                    2. INCOME & EXPENSE SUMMARY
-                ========================================== */}
 
                 <div className="section">
 
@@ -1319,8 +965,8 @@ function Dashboard() {
                   analyticsExpenses === 0 ? (
 
                     <p>
-                      No income or expense
-                      data available.
+                      No income or expense data
+                      available.
                     </p>
 
                   ) : (
@@ -1352,9 +998,7 @@ function Dashboard() {
                             strokeDasharray="3 3"
                           />
 
-                          <XAxis
-                            dataKey="name"
-                          />
+                          <XAxis dataKey="name" />
 
                           <YAxis
                             tickFormatter={(value) =>
@@ -1392,18 +1036,11 @@ function Dashboard() {
 
                 </div>
 
-                {/* ==========================================
-                    3. CATEGORY-WISE SPENDING
-                ========================================== */}
-
                 <div className="section">
 
-                  <h2>
-                    🛒 Category-wise Spending
-                  </h2>
+                  <h2>🛒 Category-wise Spending</h2>
 
-                  {expenseCategoryData.length ===
-                  0 ? (
+                  {expenseCategoryData.length === 0 ? (
 
                     <p>
                       No expense data available
@@ -1426,9 +1063,7 @@ function Dashboard() {
                         <PieChart>
 
                           <Pie
-                            data={
-                              expenseCategoryData
-                            }
+                            data={expenseCategoryData}
                             dataKey="value"
                             nameKey="name"
                             cx="50%"
@@ -1440,17 +1075,14 @@ function Dashboard() {
                           >
 
                             {expenseCategoryData.map(
-                              (
-                                entry,
-                                index
-                              ) => (
+                              (entry, index) => (
 
                                 <Cell
                                   key={`${entry.name}-${index}`}
                                   fill={
                                     chartColors[
                                       index %
-                                        chartColors.length
+                                      chartColors.length
                                     ]
                                   }
                                 />
@@ -1478,22 +1110,16 @@ function Dashboard() {
 
                 </div>
 
-                {/* ==========================================
-                    4. MONTHLY TRENDS
-                ========================================== */}
-
                 <div className="section">
 
                   <h2>
                     📈 Monthly Income & Expense Trends
                   </h2>
 
-                  {monthlyTrendData.length ===
-                  0 ? (
+                  {monthlyTrendData.length === 0 ? (
 
                     <p>
-                      No monthly trend data
-                      available.
+                      No monthly trend data available.
                     </p>
 
                   ) : (
@@ -1510,9 +1136,7 @@ function Dashboard() {
                       >
 
                         <LineChart
-                          data={
-                            monthlyTrendData
-                          }
+                          data={monthlyTrendData}
                           margin={{
                             top: 20,
                             right: 30,
@@ -1525,9 +1149,7 @@ function Dashboard() {
                             strokeDasharray="3 3"
                           />
 
-                          <XAxis
-                            dataKey="month"
-                          />
+                          <XAxis dataKey="month" />
 
                           <YAxis
                             tickFormatter={(value) =>
@@ -1571,15 +1193,9 @@ function Dashboard() {
 
                 </div>
 
-                {/* ==========================================
-                    5. SAVINGS PROGRESS
-                ========================================== */}
-
                 <div className="section">
 
-                  <h2>
-                    🎯 Savings Progress
-                  </h2>
+                  <h2>🎯 Savings Progress</h2>
 
                   {savingsTarget === 0 &&
                   currentSavings === 0 ? (
@@ -1598,45 +1214,30 @@ function Dashboard() {
 
                       <div
                         style={{
-                          marginBottom:
-                            "20px",
+                          marginBottom: "20px",
                         }}
                       >
 
                         <p>
-                          <strong>
-                            Saved:
-                          </strong>{" "}
+                          <strong>Saved:</strong>{" "}
                           ₹
-                          {currentSavings.toFixed(
-                            2
-                          )}
+                          {currentSavings.toFixed(2)}
                         </p>
 
                         <p>
-                          <strong>
-                            Target:
-                          </strong>{" "}
+                          <strong>Target:</strong>{" "}
                           ₹
-                          {savingsTarget.toFixed(
-                            2
-                          )}
+                          {savingsTarget.toFixed(2)}
                         </p>
 
                         <p>
-                          <strong>
-                            Remaining:
-                          </strong>{" "}
+                          <strong>Remaining:</strong>{" "}
                           ₹
-                          {savingsRemaining.toFixed(
-                            2
-                          )}
+                          {savingsRemaining.toFixed(2)}
                         </p>
 
                         <p>
-                          <strong>
-                            Completion:
-                          </strong>{" "}
+                          <strong>Completion:</strong>{" "}
                           {safeSavingsPercentage.toFixed(
                             1
                           )}
@@ -1645,19 +1246,14 @@ function Dashboard() {
 
                       </div>
 
-                      {/* PROGRESS BAR */}
-
                       <div
                         style={{
                           width: "100%",
                           height: "30px",
-                          backgroundColor:
-                            "#e5e7eb",
-                          borderRadius:
-                            "15px",
+                          backgroundColor: "#e5e7eb",
+                          borderRadius: "15px",
                           overflow: "hidden",
-                          marginBottom:
-                            "20px",
+                          marginBottom: "20px",
                         }}
                       >
 
@@ -1665,18 +1261,14 @@ function Dashboard() {
                           style={{
                             width: `${safeSavingsPercentage}%`,
                             height: "100%",
-                            backgroundColor:
-                              "#3b82f6",
-                            borderRadius:
-                              "15px",
+                            backgroundColor: "#3b82f6",
+                            borderRadius: "15px",
                             transition:
                               "width 0.5s ease",
                           }}
                         />
 
                       </div>
-
-                      {/* SAVINGS CHART */}
 
                       <ResponsiveContainer
                         width="100%"
@@ -1699,9 +1291,7 @@ function Dashboard() {
                             strokeDasharray="3 3"
                           />
 
-                          <XAxis
-                            dataKey="name"
-                          />
+                          <XAxis dataKey="name" />
 
                           <YAxis
                             tickFormatter={(value) =>
@@ -1744,30 +1334,21 @@ function Dashboard() {
 
         </div>
 
-        {/* =====================================================
-            EXPENSE MANAGEMENT
-        ===================================================== */}
-
         <div className="section">
 
           <h2>➕ Add Expense</h2>
 
           <form
             className="form"
-            onSubmit={
-              handleExpenseSubmit
-            }
+            onSubmit={handleExpenseSubmit}
           >
 
             <select
-              value={
-                expenseForm.category
-              }
+              value={expenseForm.category}
               onChange={(e) =>
                 setExpenseForm({
                   ...expenseForm,
-                  category:
-                    e.target.value,
+                  category: e.target.value,
                 })
               }
               required
@@ -1777,26 +1358,15 @@ function Dashboard() {
                 Select Category
               </option>
 
-              <option value="Food">
-                Food
-              </option>
-
-              <option value="Travel">
-                Travel
-              </option>
-
-              <option value="Shopping">
-                Shopping
-              </option>
-
+              <option value="Food">Food</option>
+              <option value="Travel">Travel</option>
+              <option value="Shopping">Shopping</option>
               <option value="Education">
                 Education
               </option>
-
               <option value="Entertainment">
                 Entertainment
               </option>
-
               <option value="Miscellaneous">
                 Miscellaneous
               </option>
@@ -1806,14 +1376,11 @@ function Dashboard() {
             <input
               type="number"
               placeholder="Amount"
-              value={
-                expenseForm.amount
-              }
+              value={expenseForm.amount}
               onChange={(e) =>
                 setExpenseForm({
                   ...expenseForm,
-                  amount:
-                    e.target.value,
+                  amount: e.target.value,
                 })
               }
               required
@@ -1821,14 +1388,11 @@ function Dashboard() {
 
             <input
               type="date"
-              value={
-                expenseForm.date
-              }
+              value={expenseForm.date}
               onChange={(e) =>
                 setExpenseForm({
                   ...expenseForm,
-                  date:
-                    e.target.value,
+                  date: e.target.value,
                 })
               }
               required
@@ -1837,9 +1401,7 @@ function Dashboard() {
             <input
               type="text"
               placeholder="Description"
-              value={
-                expenseForm.description
-              }
+              value={expenseForm.description}
               onChange={(e) =>
                 setExpenseForm({
                   ...expenseForm,
@@ -1859,79 +1421,70 @@ function Dashboard() {
 
           {expenses.length === 0 ? (
 
-            <p>
-              No expenses found.
-            </p>
+            <p>No expenses found.</p>
 
           ) : (
 
             <ul className="data-list">
 
-              {expenses.map(
-                (expense) => (
+              {expenses.map((expense) => (
 
-                  <li
-                    key={expense.id}
+                <li key={expense.id}>
+
+                  <strong>
+                    {expense.category}
+                  </strong>
+
+                  {" - ₹"}
+
+                  {Number(
+                    expense.amount
+                  ).toFixed(2)}
+
+                  {" - "}
+
+                  {expense.date}
+
+                  {" - "}
+
+                  {expense.description}
+
+                  <div
+                    style={{
+                      marginTop: "10px",
+                    }}
                   >
 
-                    <strong>
-                      {expense.category}
-                    </strong>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleEditExpense(
+                          expense
+                        )
+                      }
+                    >
+                      ✏️ Edit
+                    </button>
 
-                    {" - "}
-
-                    ₹
-                    {Number(
-                      expense.amount
-                    ).toFixed(2)}
-
-                    {" - "}
-
-                    {expense.date}
-
-                    {" - "}
-
-                    {expense.description}
-
-                    <div
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteExpense(
+                          expense.id
+                        )
+                      }
                       style={{
-                        marginTop:
-                          "10px",
+                        marginLeft: "8px",
                       }}
                     >
+                      🗑️ Delete
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleEditExpense(
-                            expense
-                          )
-                        }
-                      >
-                        ✏️ Edit
-                      </button>
+                  </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDeleteExpense(
-                            expense.id
-                          )
-                        }
-                        style={{
-                          marginLeft:
-                            "8px",
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
+                </li>
 
-                    </div>
-
-                  </li>
-
-                )
-              )}
+              ))}
 
             </ul>
 
@@ -1939,32 +1492,23 @@ function Dashboard() {
 
         </div>
 
-        {/* =====================================================
-            INCOME MANAGEMENT
-        ===================================================== */}
-
         <div className="section">
 
           <h2>➕ Add Income</h2>
 
           <form
             className="form"
-            onSubmit={
-              handleIncomeSubmit
-            }
+            onSubmit={handleIncomeSubmit}
           >
 
             <input
               type="text"
               placeholder="Income Source"
-              value={
-                incomeForm.source
-              }
+              value={incomeForm.source}
               onChange={(e) =>
                 setIncomeForm({
                   ...incomeForm,
-                  source:
-                    e.target.value,
+                  source: e.target.value,
                 })
               }
               required
@@ -1973,14 +1517,11 @@ function Dashboard() {
             <input
               type="number"
               placeholder="Amount"
-              value={
-                incomeForm.amount
-              }
+              value={incomeForm.amount}
               onChange={(e) =>
                 setIncomeForm({
                   ...incomeForm,
-                  amount:
-                    e.target.value,
+                  amount: e.target.value,
                 })
               }
               required
@@ -1988,14 +1529,11 @@ function Dashboard() {
 
             <input
               type="date"
-              value={
-                incomeForm.date
-              }
+              value={incomeForm.date}
               onChange={(e) =>
                 setIncomeForm({
                   ...incomeForm,
-                  date:
-                    e.target.value,
+                  date: e.target.value,
                 })
               }
               required
@@ -2004,9 +1542,7 @@ function Dashboard() {
             <input
               type="text"
               placeholder="Description"
-              value={
-                incomeForm.description
-              }
+              value={incomeForm.description}
               onChange={(e) =>
                 setIncomeForm({
                   ...incomeForm,
@@ -2026,79 +1562,68 @@ function Dashboard() {
 
           {income.length === 0 ? (
 
-            <p>
-              No income found.
-            </p>
+            <p>No income found.</p>
 
           ) : (
 
             <ul className="data-list">
 
-              {income.map(
-                (item) => (
+              {income.map((item) => (
 
-                  <li
-                    key={item.id}
+                <li key={item.id}>
+
+                  <strong>
+                    {item.source}
+                  </strong>
+
+                  {" - ₹"}
+
+                  {Number(
+                    item.amount
+                  ).toFixed(2)}
+
+                  {" - "}
+
+                  {item.date}
+
+                  {" - "}
+
+                  {item.description}
+
+                  <div
+                    style={{
+                      marginTop: "10px",
+                    }}
                   >
 
-                    <strong>
-                      {item.source}
-                    </strong>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleEditIncome(item)
+                      }
+                    >
+                      ✏️ Edit
+                    </button>
 
-                    {" - "}
-
-                    ₹
-                    {Number(
-                      item.amount
-                    ).toFixed(2)}
-
-                    {" - "}
-
-                    {item.date}
-
-                    {" - "}
-
-                    {item.description}
-
-                    <div
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteIncome(
+                          item.id
+                        )
+                      }
                       style={{
-                        marginTop:
-                          "10px",
+                        marginLeft: "8px",
                       }}
                     >
+                      🗑️ Delete
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleEditIncome(
-                            item
-                          )
-                        }
-                      >
-                        ✏️ Edit
-                      </button>
+                  </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDeleteIncome(
-                            item.id
-                          )
-                        }
-                        style={{
-                          marginLeft:
-                            "8px",
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
+                </li>
 
-                    </div>
-
-                  </li>
-
-                )
-              )}
+              ))}
 
             </ul>
 
@@ -2106,32 +1631,23 @@ function Dashboard() {
 
         </div>
 
-        {/* =====================================================
-            BUDGET MANAGEMENT
-        ===================================================== */}
-
         <div className="section">
 
           <h2>➕ Add Budget</h2>
 
           <form
             className="form"
-            onSubmit={
-              handleBudgetSubmit
-            }
+            onSubmit={handleBudgetSubmit}
           >
 
             <input
               type="text"
               placeholder="Category"
-              value={
-                budgetForm.category
-              }
+              value={budgetForm.category}
               onChange={(e) =>
                 setBudgetForm({
                   ...budgetForm,
-                  category:
-                    e.target.value,
+                  category: e.target.value,
                 })
               }
               required
@@ -2140,28 +1656,21 @@ function Dashboard() {
             <input
               type="number"
               placeholder="Budget Amount"
-              value={
-                budgetForm.amount
-              }
+              value={budgetForm.amount}
               onChange={(e) =>
                 setBudgetForm({
                   ...budgetForm,
-                  amount:
-                    e.target.value,
+                  amount: e.target.value,
                 })
               }
               required
             />
 
-            <label>
-              Start Date:
-            </label>
+            <label>Start Date:</label>
 
             <input
               type="date"
-              value={
-                budgetForm.start_date
-              }
+              value={budgetForm.start_date}
               onChange={(e) =>
                 setBudgetForm({
                   ...budgetForm,
@@ -2172,15 +1681,11 @@ function Dashboard() {
               required
             />
 
-            <label>
-              End Date:
-            </label>
+            <label>End Date:</label>
 
             <input
               type="date"
-              value={
-                budgetForm.end_date
-              }
+              value={budgetForm.end_date}
               onChange={(e) =>
                 setBudgetForm({
                   ...budgetForm,
@@ -2201,79 +1706,70 @@ function Dashboard() {
 
           {budgets.length === 0 ? (
 
-            <p>
-              No budgets found.
-            </p>
+            <p>No budgets found.</p>
 
           ) : (
 
             <ul className="data-list">
 
-              {budgets.map(
-                (budget) => (
+              {budgets.map((budget) => (
 
-                  <li
-                    key={budget.id}
+                <li key={budget.id}>
+
+                  <strong>
+                    {budget.category}
+                  </strong>
+
+                  {" - ₹"}
+
+                  {Number(
+                    budget.amount
+                  ).toFixed(2)}
+
+                  {" - "}
+
+                  {budget.start_date}
+
+                  {" to "}
+
+                  {budget.end_date}
+
+                  <div
+                    style={{
+                      marginTop: "10px",
+                    }}
                   >
 
-                    <strong>
-                      {budget.category}
-                    </strong>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleEditBudget(
+                          budget
+                        )
+                      }
+                    >
+                      ✏️ Edit
+                    </button>
 
-                    {" - "}
-
-                    ₹
-                    {Number(
-                      budget.amount
-                    ).toFixed(2)}
-
-                    {" - "}
-
-                    {budget.start_date}
-
-                    {" to "}
-
-                    {budget.end_date}
-
-                    <div
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteBudget(
+                          budget.id
+                        )
+                      }
                       style={{
-                        marginTop:
-                          "10px",
+                        marginLeft: "8px",
                       }}
                     >
+                      🗑️ Delete
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleEditBudget(
-                            budget
-                          )
-                        }
-                      >
-                        ✏️ Edit
-                      </button>
+                  </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDeleteBudget(
-                            budget.id
-                          )
-                        }
-                        style={{
-                          marginLeft:
-                            "8px",
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
+                </li>
 
-                    </div>
-
-                  </li>
-
-                )
-              )}
+              ))}
 
             </ul>
 
@@ -2281,34 +1777,23 @@ function Dashboard() {
 
         </div>
 
-        {/* =====================================================
-            SAVINGS MANAGEMENT
-        ===================================================== */}
-
         <div className="section">
 
-          <h2>
-            ➕ Add Savings Goal
-          </h2>
+          <h2>➕ Add Savings Goal</h2>
 
           <form
             className="form"
-            onSubmit={
-              handleSavingsSubmit
-            }
+            onSubmit={handleSavingsSubmit}
           >
 
             <input
               type="text"
               placeholder="Savings Goal Name"
-              value={
-                savingsForm.name
-              }
+              value={savingsForm.name}
               onChange={(e) =>
                 setSavingsForm({
                   ...savingsForm,
-                  name:
-                    e.target.value,
+                  name: e.target.value,
                 })
               }
               required
@@ -2317,9 +1802,7 @@ function Dashboard() {
             <input
               type="number"
               placeholder="Target Amount"
-              value={
-                savingsForm.target_amount
-              }
+              value={savingsForm.target_amount}
               onChange={(e) =>
                 setSavingsForm({
                   ...savingsForm,
@@ -2333,9 +1816,7 @@ function Dashboard() {
             <input
               type="number"
               placeholder="Current Savings"
-              value={
-                savingsForm.current_amount
-              }
+              value={savingsForm.current_amount}
               onChange={(e) =>
                 setSavingsForm({
                   ...savingsForm,
@@ -2346,15 +1827,11 @@ function Dashboard() {
               required
             />
 
-            <label>
-              Target Date:
-            </label>
+            <label>Target Date:</label>
 
             <input
               type="date"
-              value={
-                savingsForm.target_date
-              }
+              value={savingsForm.target_date}
               onChange={(e) =>
                 setSavingsForm({
                   ...savingsForm,
@@ -2371,93 +1848,78 @@ function Dashboard() {
 
           </form>
 
-          <h2>
-            My Savings Goals
-          </h2>
+          <h2>My Savings Goals</h2>
 
-          {savingsGoals.length ===
-          0 ? (
+          {savingsGoals.length === 0 ? (
 
-            <p>
-              No savings goals found.
-            </p>
+            <p>No savings goals found.</p>
 
           ) : (
 
             <ul className="data-list">
 
-              {savingsGoals.map(
-                (goal) => (
+              {savingsGoals.map((goal) => (
 
-                  <li
-                    key={goal.id}
+                <li key={goal.id}>
+
+                  <strong>{goal.name}</strong>
+
+                  {" - ₹"}
+
+                  {Number(
+                    goal.current_amount
+                  ).toFixed(2)}
+
+                  {" / ₹"}
+
+                  {Number(
+                    goal.target_amount
+                  ).toFixed(2)}
+
+                  {" - "}
+
+                  {goal.target_date}
+
+                  {" - Status: "}
+
+                  {goal.status}
+
+                  <div
+                    style={{
+                      marginTop: "10px",
+                    }}
                   >
 
-                    <strong>
-                      {goal.name}
-                    </strong>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleEditSavingsGoal(
+                          goal
+                        )
+                      }
+                    >
+                      ✏️ Edit
+                    </button>
 
-                    {" - "}
-
-                    ₹
-                    {Number(
-                      goal.current_amount
-                    ).toFixed(2)}
-
-                    {" / "}
-
-                    ₹
-                    {Number(
-                      goal.target_amount
-                    ).toFixed(2)}
-
-                    {" - "}
-
-                    {goal.target_date}
-
-                    {" - Status: "}
-
-                    {goal.status}
-
-                    <div
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDeleteSavingsGoal(
+                          goal.id
+                        )
+                      }
                       style={{
-                        marginTop:
-                          "10px",
+                        marginLeft: "8px",
                       }}
                     >
+                      🗑️ Delete
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleEditSavingsGoal(
-                            goal
-                          )
-                        }
-                      >
-                        ✏️ Edit
-                      </button>
+                  </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDeleteSavingsGoal(
-                            goal.id
-                          )
-                        }
-                        style={{
-                          marginLeft:
-                            "8px",
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
+                </li>
 
-                    </div>
-
-                  </li>
-
-                )
-              )}
+              ))}
 
             </ul>
 
@@ -2465,22 +1927,13 @@ function Dashboard() {
 
         </div>
 
-        {/* =====================================================
-            NOTIFICATIONS
-        ===================================================== */}
-
         <div className="section">
 
-          <h2>
-            🔔 My Notifications
-          </h2>
+          <h2>🔔 My Notifications</h2>
 
-          {notifications.length ===
-          0 ? (
+          {notifications.length === 0 ? (
 
-            <p>
-              No notifications found.
-            </p>
+            <p>No notifications found.</p>
 
           ) : (
 
@@ -2489,17 +1942,12 @@ function Dashboard() {
 
                 <div
                   className="notification"
-                  key={
-                    notification.id
-                  }
+                  key={notification.id}
                   style={{
                     padding: "15px",
-                    marginBottom:
-                      "12px",
-                    border:
-                      "1px solid #ddd",
-                    borderRadius:
-                      "8px",
+                    marginBottom: "12px",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
                     backgroundColor:
                       notification.is_read
                         ? "#f5f5f5"
@@ -2513,33 +1961,25 @@ function Dashboard() {
                   </h3>
 
                   <p>
-                    {
-                      notification.message
-                    }
+                    {notification.message}
                   </p>
 
                   <p>
-                    <strong>
-                      Type:
-                    </strong>{" "}
+                    <strong>Type:</strong>{" "}
                     {
                       notification.notification_type
                     }
                   </p>
 
                   <p>
-                    <strong>
-                      Status:
-                    </strong>{" "}
+                    <strong>Status:</strong>{" "}
                     {notification.is_read
                       ? "✅ Read"
                       : "🔔 Unread"}
                   </p>
 
                   <p>
-                    <strong>
-                      Created:
-                    </strong>{" "}
+                    <strong>Created:</strong>{" "}
                     {notification.created_at
                       ? new Date(
                           notification.created_at
@@ -2548,6 +1988,7 @@ function Dashboard() {
                   </p>
 
                   {!notification.is_read && (
+
                     <button
                       type="button"
                       onClick={() =>
@@ -2558,6 +1999,7 @@ function Dashboard() {
                     >
                       ✓ Mark as Read
                     </button>
+
                   )}
 
                 </div>

@@ -17,7 +17,7 @@ import {
 
 import "./reports.css";
 
-const API = "http://127.0.0.1:8000/api";
+const API = import.meta.env.VITE_API_URL;
 
 function Reports() {
   const navigate = useNavigate();
@@ -133,6 +133,112 @@ function Reports() {
   };
 
   // =========================================
+  // PDF DOWNLOAD
+  // =========================================
+
+  const downloadPDF = async () => {
+    const token = localStorage.getItem("access_token");
+
+    try {
+      setError("");
+
+      const response = await fetch(
+        `${API}/reports/pdf/?month=2026-09`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+
+        navigate("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("PDF download failed");
+      }
+
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "BudgetBuddy_Report.pdf";
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF download error:", err);
+
+      setError("Unable to download PDF report.");
+    }
+  };
+
+  // =========================================
+  // EXCEL DOWNLOAD
+  // =========================================
+
+  const downloadExcel = async () => {
+    const token = localStorage.getItem("access_token");
+
+    try {
+      setError("");
+
+      const response = await fetch(
+        `${API}/reports/excel/?month=2026-09`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+
+        navigate("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Excel download failed");
+      }
+
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "BudgetBuddy_Report.xlsx";
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Excel download error:", err);
+
+      setError("Unable to download Excel report.");
+    }
+  };
+
+  // =========================================
   // CALCULATIONS
   // =========================================
 
@@ -156,15 +262,13 @@ function Reports() {
 
   const savingsTarget = savingsGoals.reduce(
     (total, goal) =>
-      total +
-      Number(goal.target_amount || 0),
+      total + Number(goal.target_amount || 0),
     0
   );
 
   const currentSavings = savingsGoals.reduce(
     (total, goal) =>
-      total +
-      Number(goal.current_amount || 0),
+      total + Number(goal.current_amount || 0),
     0
   );
 
@@ -213,8 +317,7 @@ function Reports() {
   const categoryTotals = {};
 
   expenses.forEach((expense) => {
-    const category =
-      expense.category || "Other";
+    const category = expense.category || "Other";
 
     categoryTotals[category] =
       (categoryTotals[category] || 0) +
@@ -233,8 +336,8 @@ function Reports() {
   // SAVINGS CHART DATA
   // =========================================
 
-  const savingsChartData =
-    savingsGoals.map((goal) => ({
+  const savingsChartData = savingsGoals.map(
+    (goal) => ({
       name: goal.name || "Savings",
       Current: Number(
         goal.current_amount || 0
@@ -242,7 +345,8 @@ function Reports() {
       Target: Number(
         goal.target_amount || 0
       ),
-    }));
+    })
+  );
 
   // =========================================
   // CHART COLORS
@@ -283,12 +387,9 @@ function Reports() {
     <div className="reports-page">
       <div className="reports-container">
 
-        {/* ===================================
-            HEADER
-        =================================== */}
+        {/* HEADER */}
 
         <div className="reports-header">
-
           <div>
             <h1>
               📊 BudgetBuddy Reports
@@ -308,12 +409,35 @@ function Reports() {
           >
             🔙 Dashboard
           </button>
-
         </div>
 
-        {/* ===================================
-            ERROR
-        =================================== */}
+        {/* EXPORT BUTTONS */}
+
+        <div className="report-export-section">
+          <h2>
+            📥 Export Reports
+          </h2>
+
+          <div className="export-buttons">
+
+            <button
+              className="export-button pdf-button"
+              onClick={downloadPDF}
+            >
+              📄 Download PDF
+            </button>
+
+            <button
+              className="export-button excel-button"
+              onClick={downloadExcel}
+            >
+              📊 Download Excel
+            </button>
+
+          </div>
+        </div>
+
+        {/* ERROR */}
 
         {error && (
           <div className="error-message">
@@ -321,9 +445,7 @@ function Reports() {
           </div>
         )}
 
-        {/* ===================================
-            FINANCIAL SUMMARY
-        =================================== */}
+        {/* FINANCIAL SUMMARY */}
 
         <h2>
           💰 Financial Summary
@@ -333,7 +455,6 @@ function Reports() {
 
           <div className="report-card income-card">
             <h3>💵 Total Income</h3>
-
             <h2>
               ₹{totalIncome.toFixed(2)}
             </h2>
@@ -341,7 +462,6 @@ function Reports() {
 
           <div className="report-card expense-card">
             <h3>💸 Total Expenses</h3>
-
             <h2>
               ₹{totalExpenses.toFixed(2)}
             </h2>
@@ -349,7 +469,6 @@ function Reports() {
 
           <div className="report-card balance-card">
             <h3>💰 Balance</h3>
-
             <h2>
               ₹{balance.toFixed(2)}
             </h2>
@@ -357,7 +476,6 @@ function Reports() {
 
           <div className="report-card budget-card">
             <h3>📊 Total Budget</h3>
-
             <h2>
               ₹{totalBudget.toFixed(2)}
             </h2>
@@ -365,7 +483,6 @@ function Reports() {
 
           <div className="report-card savings-card">
             <h3>🎯 Savings Target</h3>
-
             <h2>
               ₹{savingsTarget.toFixed(2)}
             </h2>
@@ -373,7 +490,6 @@ function Reports() {
 
           <div className="report-card current-card">
             <h3>🏦 Current Savings</h3>
-
             <h2>
               ₹{currentSavings.toFixed(2)}
             </h2>
@@ -381,9 +497,7 @@ function Reports() {
 
         </div>
 
-        {/* ===================================
-            CHARTS
-        =================================== */}
+        {/* FINANCIAL CHARTS */}
 
         <h2>
           📊 Financial Charts
@@ -394,7 +508,6 @@ function Reports() {
           {/* INCOME VS EXPENSE */}
 
           <div className="chart-card">
-
             <h3>
               💰 Income vs Expenses
             </h3>
@@ -406,7 +519,6 @@ function Reports() {
               <BarChart
                 data={incomeExpenseData}
               >
-
                 <CartesianGrid
                   strokeDasharray="3 3"
                 />
@@ -435,7 +547,6 @@ function Reports() {
 
               </BarChart>
             </ResponsiveContainer>
-
           </div>
 
           {/* EXPENSE CATEGORY */}
@@ -452,7 +563,6 @@ function Reports() {
                 width="100%"
                 height={320}
               >
-
                 <PieChart>
 
                   <Pie
@@ -486,7 +596,6 @@ function Reports() {
                   <Legend />
 
                 </PieChart>
-
               </ResponsiveContainer>
 
             ) : (
@@ -503,9 +612,7 @@ function Reports() {
 
         </div>
 
-        {/* ===================================
-            SAVINGS CHART
-        =================================== */}
+        {/* SAVINGS CHART */}
 
         <div className="chart-card full-chart">
 
@@ -566,9 +673,7 @@ function Reports() {
 
         </div>
 
-        {/* ===================================
-            SAVINGS PROGRESS
-        =================================== */}
+        {/* SAVINGS PROGRESS */}
 
         <h2>
           🎯 Savings Progress
@@ -610,9 +715,7 @@ function Reports() {
 
         </div>
 
-        {/* ===================================
-            BUDGET STATUS
-        =================================== */}
+        {/* BUDGET STATUS */}
 
         <h2>
           📊 Budget Status
@@ -668,9 +771,7 @@ function Reports() {
 
         </div>
 
-        {/* ===================================
-            REPORT DETAILS
-        =================================== */}
+        {/* REPORT DETAILS */}
 
         <h2>
           📄 Report Details
